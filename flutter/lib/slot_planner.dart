@@ -345,7 +345,7 @@ class _SlotHomeState extends State<SlotHome> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: _tab == 0 && showWeekBoard ? double.infinity : 760),
+            constraints: BoxConstraints(maxWidth: (_tab == 0 && showWeekBoard) || _tab == 1 ? double.infinity : 760),
             child: AbsorbPointer(
               absorbing: _busy,
               child: Column(

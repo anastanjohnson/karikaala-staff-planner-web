@@ -28,7 +28,7 @@ class StaffAvailabilityPanel extends StatefulWidget {
 class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
   late DateTime _month = DateTime(widget.today.year, widget.today.month);
   String? _staffId;
-  DateTime? _day;
+  late DateTime? _day = restaurantClosed(widget.today) ? null : dateOnly(widget.today);
   bool _busy = false;
   String? _error;
   @override
@@ -36,7 +36,7 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.resetToken != widget.resetToken) {
       _month = DateTime(widget.today.year, widget.today.month);
-      _day = null;
+      _day = restaurantClosed(widget.today) ? null : dateOnly(widget.today);
       _error = null;
     }
   }
@@ -87,23 +87,92 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
     final person =
         staff.where((p) => p.id == _staffId).firstOrNull ?? staff.firstOrNull;
     final id = person?.id;
-    return ListView(
-      key: const PageStorageKey('staff-availability-scroll'),
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (person == null) ...[
-          const Text('Add your staff',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          const Text(
-              'New staff are available by default. You can mark time off on their calendar.'),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-              key: const ValueKey('add-person'),
-              onPressed: _addStaff,
-              icon: const Icon(Icons.person_add_alt),
-              label: const Text('Add staff member')),
-        ] else ...[
+
+    return ColoredBox(color: const Color(0xFFF5F7F5), child: LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 1000;
+        final details = _panel(Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Text('Day availability', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          if (person != null) ...[
+          if (_day == null)
+            const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Text('Choose a date to view its time slots.',
+                    style: TextStyle(color: rosterMuted))),
+          if (_day != null) ...[
+            const SizedBox(height: 16),
+            Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text('${dayNames[_day!.weekday - 1]}, ${fullDate(_day!)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 18)),
+                  TextButton(
+                      key: const ValueKey('available-all-day'),
+                      onPressed: _busy || !plan.hasTimeOff(id!, _day!)
+                          ? null
+                          : () => _save(
+                              widget.getPlan().clearTimeOffDay(id!, _day!)),
+                      child: const Text('All available')),
+                ]),
+            const Text(
+                'On = available · Off = unavailable. Overlapping shifts are blocked too.',
+                style: TextStyle(fontSize: 14, color: rosterMuted)),
+            if (_busy)
+              const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Saving…',
+                      style: TextStyle(fontSize: 14, color: rosterMuted))),
+            if (_error != null)
+              Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(_error!, style: const TextStyle(color: _offInk))),
+            for (final preset in plan.availabilityRanges(_day!))
+              _slot(plan, id!, preset),
+            if (plan.slots.any((s) =>
+                s.staffId == id &&
+                !plan.availableFor(s, id!) &&
+                (dateKey(s.date) == dateKey(_day!) ||
+                    (s.nextDay &&
+                        dateKey(addDays(s.date, 1)) == dateKey(_day!)))))
+              Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: _offSurface,
+                      borderRadius: BorderRadius.circular(8)),
+                  child: const Text(
+                      'Already assigned during unavailable hours. Review the affected slots in Plan. Published rosters keep their confirmed version.',
+                      style: TextStyle(color: _offInk, fontSize: 13))),
+            const SizedBox(height: 12),
+            const Text('Changes save automatically.',
+                style: TextStyle(fontSize: 14, color: rosterMuted)),
+          ],
+          ],
+        ]));
+        return SingleChildScrollView(
+          key: const PageStorageKey('staff-availability-scroll'),
+          padding: EdgeInsets.all(wide ? 32 : 16),
+          child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 1400),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const Text('Staff & availability', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -.6)),
+              const SizedBox(height: 8),
+              const Text('Manage your team and plan around their availability.',
+                style: TextStyle(fontSize: 16, color: rosterMuted)),
+              const SizedBox(height: 24),
+              if (person == null) _panel(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Build your team', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                const Text('Add a staff member to start managing their availability.'),
+                const SizedBox(height: 20),
+                FilledButton.icon(key: const ValueKey('add-person'), onPressed: _addStaff,
+                  icon: const Icon(Icons.person_add_alt), label: const Text('Add staff member')),
+              ]))
+              else ...[
+                _panel(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
                 child: DropdownButtonFormField<String>(
@@ -130,11 +199,13 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
                         _error = null;
                       }),
             )),
-            IconButton(
+            if (wide) TextButton.icon(onPressed: _busy ? null : () => widget.onEdit(person), icon: const Icon(Icons.edit_outlined), label: const Text('Edit staff'))
+            else IconButton(
                 tooltip: 'Edit ${person.name}',
                 onPressed: _busy ? null : () => widget.onEdit(person),
                 icon: const Icon(Icons.edit_outlined)),
-            IconButton(
+            if (wide) FilledButton.icon(key: const ValueKey('add-person'), onPressed: _busy ? null : _addStaff, icon: const Icon(Icons.person_add_alt), label: const Text('Add staff'))
+            else IconButton(
                 key: const ValueKey('add-person'),
                 tooltip: 'Add staff member',
                 onPressed: _busy ? null : _addStaff,
@@ -142,83 +213,39 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
           ]),
           const SizedBox(height: 10),
           const Text(
-              'Available on open days. Tuesdays and Wednesdays are closed.',
-              style: TextStyle(fontSize: 13, color: rosterMuted)),
+              'Available by default on open days. Select a date to manage time off.',
+              style: TextStyle(fontSize: 15, color: rosterMuted)),
           if (person.sample)
             const Padding(
                 padding: EdgeInsets.only(top: 4),
                 child: Text('Sample staff member',
                     style: TextStyle(fontSize: 12, color: rosterMuted))),
-          const SizedBox(height: 10),
-          _calendar(plan, id!),
-          const SizedBox(height: 8),
-          const Row(children: [
-            Icon(Icons.circle, size: 6, color: _offInk),
-            SizedBox(width: 6),
-            Expanded(
-                child: Text('Red dates have unavailable slots',
-                    style: TextStyle(fontSize: 12, color: rosterMuted))),
-          ]),
-          if (_day == null)
-            const Padding(
-                padding: EdgeInsets.symmetric(vertical: 18),
-                child: Text('Choose a date to view its time slots.',
-                    style: TextStyle(color: rosterMuted))),
-          if (_day != null) ...[
-            const SizedBox(height: 16),
-            Wrap(
-                spacing: 12,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text('${dayNames[_day!.weekday - 1]}, ${shortDate(_day!)}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 18)),
-                  TextButton(
-                      key: const ValueKey('available-all-day'),
-                      onPressed: _busy || !plan.hasTimeOff(id, _day!)
-                          ? null
-                          : () => _save(
-                              widget.getPlan().clearTimeOffDay(id, _day!)),
-                      child: const Text('All available')),
-                ]),
-            const Text(
-                'On = available · Off = unavailable. Overlapping shifts are blocked too.',
-                style: TextStyle(fontSize: 12, color: rosterMuted)),
-            if (_busy)
-              const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text('Saving…',
-                      style: TextStyle(fontSize: 12, color: rosterMuted))),
-            if (_error != null)
-              Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Text(_error!, style: const TextStyle(color: _offInk))),
-            for (final preset in plan.availabilityRanges(_day!))
-              _slot(plan, id, preset),
-            if (plan.slots.any((s) =>
-                s.staffId == id &&
-                !plan.availableFor(s, id) &&
-                (dateKey(s.date) == dateKey(_day!) ||
-                    (s.nextDay &&
-                        dateKey(addDays(s.date, 1)) == dateKey(_day!)))))
-              Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                      color: _offSurface,
-                      borderRadius: BorderRadius.circular(8)),
-                  child: const Text(
-                      'Already assigned during unavailable hours. Review the affected slots in Plan. Published rosters keep their confirmed version.',
-                      style: TextStyle(color: _offInk, fontSize: 13))),
-            const SizedBox(height: 12),
-            const Text('Changes save automatically on this device.',
-                style: TextStyle(fontSize: 12, color: rosterMuted)),
-          ],
-        ],
-      ],
-    );
+
+                ])),
+                const SizedBox(height: 24),
+                if (wide)
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(flex: 7, child: _calendar(plan, id!)),
+                    const SizedBox(width: 24),
+                    Expanded(flex: 4, child: details),
+                  ])
+                else ...[
+                  _calendar(plan, id!),
+                  const SizedBox(height: 24),
+                  details,
+                ],
+              ],
+            ]))),
+        );
+      },
+    ));
   }
+
+  Widget _panel(Widget child) => Container(
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xFFDCE5DF))),
+    child: child);
 
   Widget _calendar(SlotPlan plan, String id) {
     final count = DateTime(_month.year, _month.month + 1, 0).day;
@@ -226,9 +253,10 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
     final rows = (leading + count + 6) ~/ 7;
     return Container(
       decoration: BoxDecoration(
-          border: Border.all(color: rosterLine),
-          borderRadius: BorderRadius.circular(10)),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFDCE5DF)),
+          borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.all(20),
       child: Column(children: [
         Row(children: [
           IconButton(
@@ -240,25 +268,31 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
               child: Text('${_monthName(_month.month)} ${_month.year}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w600))),
+                      fontSize: 24, fontWeight: FontWeight.w700))),
           IconButton(
               key: const ValueKey('calendar-next-month'),
               tooltip: 'Next month',
               onPressed: _busy ? null : () => _moveMonth(1),
               icon: const Icon(Icons.chevron_right)),
         ]),
+        const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+          child: Wrap(spacing: 16, runSpacing: 8, children: [
+            Text('● Available', style: TextStyle(color: Color(0xFF24573D), fontSize: 13)),
+            Text('● Time off', style: TextStyle(color: _offInk, fontSize: 13)),
+            Text('● Closed Tuesday & Wednesday', style: TextStyle(color: rosterMuted, fontSize: 13)),
+          ])),
         LayoutBuilder(builder: (context, constraints) {
           final number = TextPainter(
               text: TextSpan(
                   text: '99',
                   style: DefaultTextStyle.of(context)
                       .style
-                      .copyWith(fontSize: 15, fontWeight: FontWeight.w700)),
+                      .copyWith(fontSize: 20, fontWeight: FontWeight.w700)),
               textDirection: Directionality.of(context),
               textScaler: MediaQuery.textScalerOf(context))
             ..layout();
           final cell = math.max(constraints.maxWidth / 7,
-              math.max(44.0, math.max(number.width, number.height) + 12));
+              math.max(56.0, math.max(number.width, number.height) + 20));
           number.dispose();
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -266,23 +300,23 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
                 width: cell * 7,
                 child: Column(children: [
                   Row(children: [
-                    for (final name in ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+                    for (final name in (cell >= 90 ? dayNames : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']))
                       SizedBox(
                           width: cell,
-                          height: 32,
+                          height: 48,
                           child: Center(
                               child: Text(name,
                                   style: const TextStyle(
-                                      fontSize: 12, color: rosterMuted))))
+                                      fontSize: 13, color: rosterMuted))))
                   ]),
                   for (var week = 0; week < rows; week++)
                     Row(children: [
                       for (var weekday = 0; weekday < 7; weekday++)
                         SizedBox(
                             width: cell,
-                            height: math.max(44, cell),
+                            height: cell >= 80 ? 88 : 56,
                             child: _dateCell(plan, id,
-                                week * 7 + weekday - leading + 1, count)),
+                                week * 7 + weekday - leading + 1, count, cell >= 80)),
                     ]),
                 ])),
           );
@@ -291,7 +325,7 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
     );
   }
 
-  Widget _dateCell(SlotPlan plan, String id, int day, int count) {
+  Widget _dateCell(SlotPlan plan, String id, int day, int count, bool detailed) {
     if (day < 1 || day > count) return const SizedBox.shrink();
     final date = DateTime(_month.year, _month.month, day);
     final closed = restaurantClosed(date);
@@ -301,7 +335,7 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
             !plan.availableFor(preset.onDay(date, 'calendar-range'), id));
     final today = dateKey(date) == dateKey(widget.today);
     return Padding(
-      padding: const EdgeInsets.all(2),
+      padding: const EdgeInsets.all(4),
       child: Semantics(
         label:
             '${dayNames[date.weekday - 1]}, ${shortDate(date)} ${date.year}${closed ? ', restaurant closed' : off ? ', unavailable time' : ', available'}',
@@ -312,12 +346,12 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
           color: closed
               ? rosterSurface
               : off
-                  ? _offSurface
+                  ? const Color(0xFFFFE1DF)
                   : selected
                       ? assignedSlotSurface
-                      : Colors.transparent,
+                      : const Color(0xFFEAF4ED),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(12),
               side: BorderSide(
                   color: !closed && off
                       ? (selected ? _offInk : const Color(0xFFE8C9C7))
@@ -329,7 +363,7 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
                   width: selected ? 1.5 : 1)),
           child: InkWell(
             key: ValueKey('calendar-day-${dateKey(date)}'),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(12),
             onTap: _busy || closed
                 ? null
                 : () => setState(() {
@@ -345,11 +379,12 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
                           : off
                               ? _offInk
                               : rosterInk,
-                      fontSize: 15,
+                      fontSize: 20,
                       fontWeight: selected || today
                           ? FontWeight.w700
                           : FontWeight.w400)),
-              const SizedBox(height: 2),
+              const SizedBox(height: 6),
+              if (detailed) Text(closed ? 'Closed' : off ? 'Time off' : 'Available', style: TextStyle(fontSize: 12, color: off ? _offInk : rosterMuted)),
               Container(
                   width: 4,
                   height: 4,
@@ -373,15 +408,15 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
               color: available ? assignedSlotBorder : const Color(0xFFE8C9C7))),
-      child: SwitchListTile(
+      child: Material(color: Colors.transparent, child: SwitchListTile(
         key: ValueKey(
             'availability-toggle-${preset.start}-${preset.end}-${preset.nextDay}'),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         title: Text(preset.timeLabel,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         subtitle: Text(available ? 'Available' : 'Unavailable',
             style: TextStyle(
-                color: available ? assignedSlotInk : _offInk, fontSize: 12)),
+                color: available ? assignedSlotInk : _offInk, fontSize: 14)),
         value: available,
         activeColor: Colors.white,
         activeTrackColor: assignedSlotInk,
@@ -392,7 +427,7 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
             ? null
             : (value) =>
                 _save(widget.getPlan().setRangeAvailable(id, range, value)),
-      ),
+      )),
     );
   }
 }

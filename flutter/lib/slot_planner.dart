@@ -356,10 +356,12 @@ class _SlotHomeState extends State<SlotHome> {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
                         children: [
-                          IconButton(
-                            tooltip: 'Previous week',
+                          TextButton(
                             onPressed: () => _openWeek(addDays(_week, -7)),
-                            icon: const Icon(Icons.chevron_left),
+                            child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+                              Icon(Icons.chevron_left),
+                              const Text('Previous week', style: TextStyle(fontSize: 12)),
+                            ]),
                           ),
                           Expanded(
                             child: Column(
@@ -380,10 +382,12 @@ class _SlotHomeState extends State<SlotHome> {
                               ],
                             ),
                           ),
-                          IconButton(
-                            tooltip: 'Next week',
+                          TextButton(
                             onPressed: () => _openWeek(addDays(_week, 7)),
-                            icon: const Icon(Icons.chevron_right),
+                            child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
+                              Icon(Icons.chevron_right),
+                              const Text('Next week', style: TextStyle(fontSize: 12)),
+                            ]),
                           ),
                           if (_tab == 0 && compactDesktop) _viewSwitch(showWeekBoard),
                         ],

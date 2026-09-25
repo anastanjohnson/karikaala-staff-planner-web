@@ -56,14 +56,14 @@ class _WeeklyBoardState extends State<WeeklyBoard> {
           final days = List.generate(7, (i) => addDays(widget.week, i));
           // A closed day with existing slots must still expose those shifts.
           final compact = days.where((d) => restaurantClosed(d) && !slots.any((s) => dateKey(s.date) == dateKey(d))).length;
-          final dayWidth = (width - 6 * 6 - compact * 80) / (7 - compact);
+          final dayWidth = (width - 6 * 6 - compact * 150) / (7 - compact);
           return Scrollbar(controller: _scroll, thumbVisibility: width > constraints.maxWidth,
             child: SingleChildScrollView(controller: _scroll, scrollDirection: Axis.horizontal,
               child: SizedBox(width: width, height: constraints.maxHeight - 12,
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   for (var i = 0; i < 7; i++) ...[
                     if (i > 0) const SizedBox(width: 6),
-                    SizedBox(width: restaurantClosed(days[i]) && !slots.any((s) => dateKey(s.date) == dateKey(days[i])) ? 80 : dayWidth,
+                    SizedBox(width: restaurantClosed(days[i]) && !slots.any((s) => dateKey(s.date) == dateKey(days[i])) ? 150 : dayWidth,
                       child: _day(days[i], slots, locked)),
                   ],
                 ]))));
@@ -83,20 +83,15 @@ class _WeeklyBoardState extends State<WeeklyBoard> {
         border: Border.all(color: rosterLine), borderRadius: BorderRadius.circular(6)),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(padding: const EdgeInsets.all(8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (closed && entries.isEmpty) ...[
-            Text(dayNames[date.weekday - 1].substring(0, 3), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            Text('${date.day}/${date.month}', style: const TextStyle(color: rosterMuted, fontSize: 12)),
-            const Text('Closed', style: TextStyle(color: rosterMuted, fontSize: 12)),
-          ] else ...[
-            Row(children: [
-              Text(dayNames[date.weekday - 1].substring(0, 3), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-              const SizedBox(width: 6),
-              Text('${date.day}/${date.month}', style: const TextStyle(color: rosterMuted, fontSize: 12)),
-              const Spacer(),
-              Text('$assigned/${entries.length}', style: const TextStyle(color: rosterMuted, fontSize: 12)),
-            ]),
+          Text(dayNames[date.weekday - 1], style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          Text(fullDate(date), style: const TextStyle(color: rosterMuted, fontSize: 13)),
+          const SizedBox(height: 6),
+          if (closed && entries.isEmpty)
+            const Text('Closed', style: TextStyle(color: rosterMuted, fontSize: 13))
+          else ...[
+            Text('$assigned/${entries.length} assigned', style: const TextStyle(color: rosterMuted, fontSize: 12)),
             const SizedBox(height: 5),
-            LinearProgressIndicator(minHeight: 2, value: entries.isEmpty ? 0 : assigned / entries.length, color: const Color(0xFF24573D)),
+            LinearProgressIndicator(minHeight: 3, value: entries.isEmpty ? 0 : assigned / entries.length, color: const Color(0xFF24573D)),
           ],
         ])),
         const Divider(height: 1),
@@ -119,15 +114,15 @@ class _WeeklyBoardState extends State<WeeklyBoard> {
     final problem = !locked && slot.staffId != null ? plan.assignmentProblem(slot, slot.staffId!) : null;
     final color = problem != null ? const Color(0xFFA33B32) : name == null ? const Color(0xFF9B6000) : const Color(0xFF24573D);
     return Padding(padding: const EdgeInsets.only(bottom: 6), child: Material(
-      color: problem != null ? const Color(0xFFFFF0EF) : name == null ? const Color(0xFFFFFAF0) : const Color(0xFFEDF4EF),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5), side: BorderSide(color: color.withValues(alpha: .25))),
+      color: problem != null ? const Color(0xFFFFCDD2) : name == null ? const Color(0xFFFFE0A3) : const Color(0xFFC8E6C9),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5), side: BorderSide(color: color.withValues(alpha: .8), width: 1.5)),
       child: InkWell(key: ValueKey('board-slot-${slot.id}'), onTap: locked ? null : () => widget.onPick(slot),
         borderRadius: BorderRadius.circular(5), child: Padding(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(slot.timeLabel, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 4),
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(name == null ? Icons.person_add_alt : Icons.check_circle_outline, size: 18, color: color),
+              Icon(problem != null ? Icons.warning_amber_rounded : name == null ? Icons.person_add_alt : Icons.check_circle_outline, size: 18, color: color),
               const SizedBox(width: 6),
               Expanded(child: Text(name ?? (locked ? 'Open' : 'Assign staff'), style: TextStyle(color: color, fontSize: 15))),
             ]),

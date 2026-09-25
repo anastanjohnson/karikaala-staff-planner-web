@@ -199,3 +199,10 @@ class LocalPlannerStore implements PlannerStore {
   Future<void> write(PlannerData data) =>
       _preferences.setString(key, data.encode());
 }
+
+/// Unambiguous date used in the desktop planner.
+String fullDate(DateTime date) {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  return '${date.day} ${months[date.month - 1]} ${date.year}';
+}

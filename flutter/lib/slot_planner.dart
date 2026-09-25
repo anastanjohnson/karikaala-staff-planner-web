@@ -14,6 +14,7 @@ import 'slot_picker.dart';
 import 'slot_row.dart';
 import 'published_roster.dart';
 import 'staff_availability.dart';
+import 'weekly_board.dart';
 
 const staffSelfAvailabilityEnabled = true;
 
@@ -338,7 +339,7 @@ class _SlotHomeState extends State<SlotHome> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: BoxConstraints(maxWidth: _tab == 0 && MediaQuery.sizeOf(context).width >= 1000 ? double.infinity : 760),
             child: AbsorbPointer(
               absorbing: _busy,
               child: Column(
@@ -384,7 +385,14 @@ class _SlotHomeState extends State<SlotHome> {
                     child: IndexedStack(
                       index: _tab,
                       children: [
-                        _weeklyPlan(),
+                        MediaQuery.sizeOf(context).width >= 1000
+                            ? WeeklyBoard(plan: _plan!, week: _week,
+                                onPick: _pick, onAdd: _editSlot,
+                                onPublish: _publish,
+                                onRevise: () => _action(() => _commit(_plan!.revise(_week))),
+                                onTemplate: () => _action(() => _commit(_plan!.loadTemplate(_week))),
+                                error: _error)
+                            : _weeklyPlan(),
                         StaffAvailabilityPanel(
                           getPlan: () => _plan!,
                           onSave: _saveAvailability,

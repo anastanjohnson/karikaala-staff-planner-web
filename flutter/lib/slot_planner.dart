@@ -66,6 +66,7 @@ class _SlotHomeState extends State<SlotHome> {
   bool _loadError = false, _busy = false;
   String? _error;
   int _tab = 0;
+  bool? _weekBoardOverride;
   int _staffCalendarReset = 0;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _availabilityWatch;
   StreamSubscription<void>? _rosterWatch;
@@ -269,6 +270,7 @@ class _SlotHomeState extends State<SlotHome> {
 
   @override
   Widget build(BuildContext context) {
+    final showWeekBoard = _weekBoardOverride ?? MediaQuery.sizeOf(context).width >= 800;
     if (_loadError) {
       return Scaffold(
         appBar: AppBar(title: const Text('Staff Planner')),
@@ -339,11 +341,25 @@ class _SlotHomeState extends State<SlotHome> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: _tab == 0 && MediaQuery.sizeOf(context).width >= 1000 ? double.infinity : 760),
+            constraints: BoxConstraints(maxWidth: _tab == 0 && showWeekBoard ? double.infinity : 760),
             child: AbsorbPointer(
               absorbing: _busy,
               child: Column(
                 children: [
+                  if (_tab == 0)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment(value: true, icon: Icon(Icons.view_week_outlined), label: Text('Week view')),
+                            ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined), label: Text('Day view')),
+                          ],
+                          selected: {showWeekBoard},
+                          onSelectionChanged: (selection) => setState(() => _weekBoardOverride = selection.first),
+                        ),
+                      ]),
+                    ),
                   if (_tab == 0 || _tab == 2)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -385,7 +401,7 @@ class _SlotHomeState extends State<SlotHome> {
                     child: IndexedStack(
                       index: _tab,
                       children: [
-                        MediaQuery.sizeOf(context).width >= 1000
+                        showWeekBoard
                             ? WeeklyBoard(plan: _plan!, week: _week,
                                 onPick: _pick, onAdd: _editSlot,
                                 onPublish: _publish,

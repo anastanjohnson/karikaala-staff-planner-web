@@ -30,6 +30,8 @@ jobs:
         working-directory: flutter
       - run: flutter build web --release --base-href /karikaala-staff-planner-web/
         working-directory: flutter
+      - run: python3 tool/version_web.py
+        working-directory: flutter
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

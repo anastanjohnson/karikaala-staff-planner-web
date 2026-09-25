@@ -270,6 +270,7 @@ class _SlotHomeState extends State<SlotHome> {
 
   @override
   Widget build(BuildContext context) {
+    final compactDesktop = MediaQuery.sizeOf(context).width >= 800;
     final showWeekBoard = _weekBoardOverride ?? MediaQuery.sizeOf(context).width >= 800;
     if (_loadError) {
       return Scaffold(
@@ -295,7 +296,8 @@ class _SlotHomeState extends State<SlotHome> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(_tab == 3 ? 'Messages' : 'Staff Planner'),
+        toolbarHeight: compactDesktop ? 40 : null,
+        title: Text(_tab == 3 ? 'Messages' : 'Staff Planner', style: compactDesktop ? const TextStyle(fontSize: 16, fontWeight: FontWeight.w600) : null),
         actions: [
           IconButton(
             tooltip: 'Reload plan',
@@ -346,20 +348,9 @@ class _SlotHomeState extends State<SlotHome> {
               absorbing: _busy,
               child: Column(
                 children: [
-                  if (_tab == 0)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                      child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                        SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment(value: true, icon: Icon(Icons.view_week_outlined), label: Text('Week view')),
-                            ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined), label: Text('Day view')),
-                          ],
-                          selected: {showWeekBoard},
-                          onSelectionChanged: (selection) => setState(() => _weekBoardOverride = selection.first),
-                        ),
-                      ]),
-                    ),
+                  if (_tab == 0 && !compactDesktop)
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      child: Align(alignment: Alignment.centerRight, child: _viewSwitch(showWeekBoard))),
                   if (_tab == 0 || _tab == 2)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -377,13 +368,14 @@ class _SlotHomeState extends State<SlotHome> {
                                   '${shortDate(_week)} – ${shortDate(addDays(_week, 6))}',
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    fontSize: 20,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
                                   '${_week.year == addDays(_week, 6).year ? _week.year : '${_week.year}/${addDays(_week, 6).year}'} · Monday to Sunday',
                                   textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 11, color: rosterMuted),
                                 ),
                               ],
                             ),
@@ -393,6 +385,7 @@ class _SlotHomeState extends State<SlotHome> {
                             onPressed: () => _openWeek(addDays(_week, 7)),
                             icon: const Icon(Icons.chevron_right),
                           ),
+                          if (_tab == 0 && compactDesktop) _viewSwitch(showWeekBoard),
                         ],
                       ),
                     ),
@@ -437,6 +430,7 @@ class _SlotHomeState extends State<SlotHome> {
           border: Border(top: BorderSide(color: rosterLine)),
         ),
         child: NavigationBar(
+          height: compactDesktop ? 48 : null,
           selectedIndex: _tab,
           onDestinationSelected: _busy
               ? null
@@ -466,6 +460,16 @@ class _SlotHomeState extends State<SlotHome> {
       ),
     );
   }
+
+  Widget _viewSwitch(bool showWeekBoard) => SegmentedButton<bool>(
+    style: SegmentedButton.styleFrom(minimumSize: const Size(32, 30), visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), textStyle: const TextStyle(fontSize: 11),
+      iconSize: 14, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+    segments: const [
+      ButtonSegment(value: true, icon: Icon(Icons.view_week_outlined), label: Text('Week view')),
+      ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined), label: Text('Day view')),
+    ], selected: {showWeekBoard},
+    onSelectionChanged: (selection) => setState(() => _weekBoardOverride = selection.first));
 
   final Set<String> _collapsedDays = {};
 

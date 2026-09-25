@@ -1,0 +1,38 @@
+name: Publish shared Flutter app
+on:
+  push:
+    branches: [main]
+    paths: ['flutter/**', '.github/workflows/flutter-web.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: flutter-web
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: flutter
+      - run: flutter test
+        working-directory: flutter
+      - run: flutter build web --release --base-href /karikaala-staff-planner-web/
+        working-directory: flutter
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: flutter/build/web
+      - uses: actions/deploy-pages@v4
+        id: deployment

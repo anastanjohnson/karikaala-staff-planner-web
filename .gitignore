@@ -1,0 +1,6 @@
+flutter/.dart_tool/
+flutter/build/
+flutter/.flutter-plugins*
+flutter/android/local.properties
+flutter/ios/Pods/
+.DS_Store

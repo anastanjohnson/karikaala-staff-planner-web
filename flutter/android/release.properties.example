@@ -1,0 +1,3 @@
+# Copy to release.properties. These values are public app metadata, not secrets.
+applicationId=com.example.onboarding_flutter
+appName=Onboarding Preview

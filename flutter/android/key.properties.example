@@ -1,0 +1,5 @@
+# Copy to key.properties and fill privately. Never commit keys or passwords.
+storePassword=REPLACE_LOCALLY
+keyPassword=REPLACE_LOCALLY
+keyAlias=upload
+storeFile=/absolute/path/to/your-upload-key.jks

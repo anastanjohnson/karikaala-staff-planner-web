@@ -296,9 +296,10 @@ class _SlotHomeState extends State<SlotHome> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
+      backgroundColor: _tab == 0 && showWeekBoard ? const Color(0xFFF5F7F5) : Colors.white,
       appBar: AppBar(
-        toolbarHeight: compactDesktop ? 40 : null,
-        title: Text(_tab == 3 ? 'Messages' : 'Staff Planner', style: compactDesktop ? const TextStyle(fontSize: 16, fontWeight: FontWeight.w600) : null),
+        toolbarHeight: compactDesktop ? 64 : null,
+        title: Text(_tab == 3 ? 'Messages' : 'Staff Planner', style: compactDesktop ? const TextStyle(fontSize: 22, fontWeight: FontWeight.w700) : null),
         actions: [
           IconButton(
             tooltip: 'Reload plan',
@@ -354,14 +355,14 @@ class _SlotHomeState extends State<SlotHome> {
                       child: Align(alignment: Alignment.centerRight, child: _viewSwitch(showWeekBoard))),
                   if (_tab == 0 || _tab == 2)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       child: Row(
                         children: [
                           TextButton(
                             onPressed: () => _openWeek(addDays(_week, -7)),
                             child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                               Icon(Icons.chevron_left),
-                              const Text('Previous week', style: TextStyle(fontSize: 12)),
+                              const Text('Previous week', style: TextStyle(fontSize: 14)),
                             ]),
                           ),
                           Expanded(
@@ -370,15 +371,15 @@ class _SlotHomeState extends State<SlotHome> {
                                 Text(
                                   '${shortDate(_week)} – ${shortDate(addDays(_week, 6))}',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 16,
+                                  style: TextStyle(
+                                    fontSize: compactDesktop ? 22 : 16,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(
                                   '${_week.year == addDays(_week, 6).year ? _week.year : '${_week.year}/${addDays(_week, 6).year}'} · Monday to Sunday',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontSize: 11, color: rosterMuted),
+                                  style: const TextStyle(fontSize: 13, color: rosterMuted),
                                 ),
                               ],
                             ),
@@ -387,7 +388,7 @@ class _SlotHomeState extends State<SlotHome> {
                             onPressed: () => _openWeek(addDays(_week, 7)),
                             child: Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                               Icon(Icons.chevron_right),
-                              const Text('Next week', style: TextStyle(fontSize: 12)),
+                              const Text('Next week', style: TextStyle(fontSize: 14)),
                             ]),
                           ),
                           if (_tab == 0 && compactDesktop) _viewSwitch(showWeekBoard),
@@ -435,7 +436,7 @@ class _SlotHomeState extends State<SlotHome> {
           border: Border(top: BorderSide(color: rosterLine)),
         ),
         child: NavigationBar(
-          height: compactDesktop ? 48 : null,
+          height: compactDesktop ? 76 : null,
           selectedIndex: _tab,
           onDestinationSelected: _busy
               ? null
@@ -467,9 +468,9 @@ class _SlotHomeState extends State<SlotHome> {
   }
 
   Widget _viewSwitch(bool showWeekBoard) => SegmentedButton<bool>(
-    style: SegmentedButton.styleFrom(minimumSize: const Size(32, 30), visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), textStyle: const TextStyle(fontSize: 11),
-      iconSize: 14, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+    style: SegmentedButton.styleFrom(minimumSize: const Size(48, 44),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), textStyle: const TextStyle(fontSize: 14),
+      iconSize: 18, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
     segments: const [
       ButtonSegment(value: true, icon: Icon(Icons.view_week_outlined), label: Text('Week view')),
       ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined), label: Text('Day view')),

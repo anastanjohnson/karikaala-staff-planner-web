@@ -296,7 +296,7 @@ class _SlotHomeState extends State<SlotHome> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      backgroundColor: _tab == 0 && showWeekBoard ? const Color(0xFFF5F7F5) : Colors.white,
+      backgroundColor: (_tab == 0 && showWeekBoard) || _tab == 2 ? const Color(0xFFF5F7F5) : Colors.white,
       appBar: AppBar(
         toolbarHeight: compactDesktop ? 64 : null,
         title: Text(_tab == 3 ? 'Messages' : 'Staff Planner', style: compactDesktop ? const TextStyle(fontSize: 22, fontWeight: FontWeight.w700) : null),
@@ -345,7 +345,7 @@ class _SlotHomeState extends State<SlotHome> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: (_tab == 0 && showWeekBoard) || _tab == 1 ? double.infinity : 760),
+            constraints: BoxConstraints(maxWidth: (_tab == 0 && showWeekBoard) || _tab == 1 || _tab == 2 ? double.infinity : 760),
             child: AbsorbPointer(
               absorbing: _busy,
               child: Column(
@@ -481,8 +481,6 @@ class _SlotHomeState extends State<SlotHome> {
 
   int _selectedPlanDay = 0;
   bool _planDayVisible = true;
-  int _selectedPublishedDay = 0;
-  bool _publishedDayVisible = true;
 
   Widget _weeklyPlan() {
     final slots = _plan!.inWeek(_week), locked = _plan!.locked(_week);
@@ -914,172 +912,11 @@ class _SlotHomeState extends State<SlotHome> {
         ],
       );
     }
-    final slots = publication.slots;
-    const green = Color(0xFF24573D);
-    return ListView(
-      key: ValueKey('published-${dateKey(_week)}-day-$_selectedPublishedDay'),
-      padding: const EdgeInsets.all(12),
-      children: [
-        Text(
-          'Published · version ${publication.revision}',
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: rosterInk,
-          ),
-        ),
-        Text(
-          'Confirmed ${shortDate(publication.publishedAt.toLocal())} ${clock(publication.publishedAt.toLocal().hour * 60 + publication.publishedAt.toLocal().minute)}',
-        ),
-        const SizedBox(height: 12),
-        if (_plan!.editing.contains(dateKey(_week)))
-          const InfoBox(
-            'You have draft changes. This view still shows the last published version.',
-          ),
-        FilledButton.icon(
-          key: const ValueKey('copy-roster'),
-          onPressed: () => _copy(publication),
-          icon: const Icon(Icons.copy),
-          label: const Text('Copy published roster'),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          cloudRosterEnabled
-              ? 'Shared roster · Linked staff can see their own shifts'
-              : 'Saved on this device · Copy to share with your team',
-          style: TextStyle(fontSize: 12, color: rosterMuted),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            for (var d = 0; d < 7; d++)
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: d == 6 ? 0 : 4),
-                  child: Builder(
-                    builder: (context) {
-                      final date = addDays(_week, d),
-                          closed = restaurantClosed(date);
-                      final entries = slots
-                          .where((s) => dateKey(s.date) == dateKey(date))
-                          .toList();
-                      final count = entries
-                          .where((s) => s.staffId != null)
-                          .length;
-                      final selected = !closed && _selectedPublishedDay == d;
-                      return Semantics(
-                        selected: selected,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(7),
-                          onTap: closed
-                              ? null
-                              : () async {
-                                  if (d == _selectedPublishedDay ||
-                                      !_publishedDayVisible) {
-                                    return;
-                                  }
-                                  HapticFeedback.selectionClick();
-                                  setState(() {
-                                    _publishedDayVisible = false;
-                                  });
-                                  await Future<void>.delayed(
-                                    const Duration(milliseconds: 300),
-                                  );
-                                  if (!mounted) return;
-                                  setState(() {
-                                    _selectedPublishedDay = d;
-                                    _publishedDayVisible = true;
-                                  });
-                                },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 7),
-                            decoration: BoxDecoration(
-                              color: closed
-                                  ? const Color(0xFFF3F3F3)
-                                  : selected
-                                  ? const Color(0xFFEDF5EF)
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(7),
-                              border: Border.all(
-                                color: selected ? green : rosterLine,
-                                width: selected ? 1.5 : 1,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  dayNames[date.weekday - 1].substring(0, 3),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: closed ? rosterMuted : rosterInk,
-                                  ),
-                                ),
-                                Text(
-                                  '${date.day}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: closed ? rosterMuted : rosterInk,
-                                  ),
-                                ),
-                                Text(
-                                  closed
-                                      ? 'Closed'
-                                      : '$count/${entries.length}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: closed ? rosterMuted : green,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                  ),
-                                  child: LinearProgressIndicator(
-                                    minHeight: 3,
-                                    value: closed || entries.isEmpty
-                                        ? 0
-                                        : count / entries.length,
-                                    backgroundColor: rosterLine,
-                                    color: green,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          opacity: _publishedDayVisible ? 1 : 0,
-          child: PublishedDayCard(
-            key: ValueKey(
-              'published-selected-${dateKey(_week)}-$_selectedPublishedDay',
-            ),
-            publication: publication,
-            day: addDays(publication.week, _selectedPublishedDay),
-          ),
-        ),
-        for (var day = 0; day < 7; day++)
-          if (day != _selectedPublishedDay &&
-              !restaurantClosed(addDays(publication.week, day)))
-            PublishedDayCard(
-              key: ValueKey(
-                'published-day-${dateKey(addDays(publication.week, day))}',
-              ),
-              publication: publication,
-              day: addDays(publication.week, day),
-            ),
-      ],
+    return PublishedRosterOverview(
+      publication: publication,
+      onCopy: () => _copy(publication),
+      hasDraft: _plan!.editing.contains(dateKey(_week)),
+      shared: cloudRosterEnabled,
     );
   }
 }

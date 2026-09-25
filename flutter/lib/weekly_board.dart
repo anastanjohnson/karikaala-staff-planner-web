@@ -35,12 +35,16 @@ class _WeeklyBoardState extends State<WeeklyBoard> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        LayoutBuilder(builder: (context, constraints) {
+          final heading = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Weekly planner', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: -.6)),
         const SizedBox(height: 6),
         Text(locked ? 'Published schedule · Visible to your team' : 'Build your team’s schedule and publish when it is ready.',
           style: const TextStyle(fontSize: 15, color: rosterMuted)),
-        const SizedBox(height: 18),
-        Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
+
+          ]);
+          final actions = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
           _summary('${slots.length}', 'shifts', const Color(0xFF24573D)),
           _summary('$assigned', 'assigned', const Color(0xFF24573D)),
           _summary('${slots.length - assigned}', 'open', const Color(0xFF9B6000)),
@@ -56,15 +60,26 @@ class _WeeklyBoardState extends State<WeeklyBoard> {
             label: Text(plan.published.containsKey(dateKey(widget.week)) ? 'Republish' : 'Publish'))),
           if (!locked && slots.isEmpty) TextButton(style: _boardButton, onPressed: widget.onTemplate, child: const Text('Use standard template')),
         ]),
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
         if (!locked && problem != null && slots.isNotEmpty)
           Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Before publishing: $problem',
             style: const TextStyle(color: Color(0xFF8B5300), fontSize: 13))),
+
+          ]);
+          if (constraints.maxWidth >= 1250) {
+            return Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              Expanded(child: heading),
+              const SizedBox(width: 24),
+              SizedBox(width: 650, child: actions),
+            ]);
+          }
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            heading, const SizedBox(height: 18), actions,
+          ]);
+        }),
+        const SizedBox(height: 16),
         if (widget.error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(widget.error!, style: const TextStyle(color: Colors.red))),
-        const Padding(padding: EdgeInsets.only(top: 4, bottom: 16), child: Text(
-          'Select a shift to assign staff or edit its details. Each day scrolls independently.',
-          style: TextStyle(color: rosterMuted, fontSize: 14))),
         Expanded(child: LayoutBuilder(builder: (context, constraints) {
           final width = math.max(1340.0, constraints.maxWidth);
           final days = List.generate(7, (i) => addDays(widget.week, i));

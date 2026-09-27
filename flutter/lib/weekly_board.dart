@@ -33,14 +33,14 @@ class _WeeklyBoardState extends State<WeeklyBoard> {
     final locked = plan.locked(widget.week);
     final problem = plan.publishProblem(widget.week);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         LayoutBuilder(builder: (context, constraints) {
           final heading = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Weekly planner', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: -.6)),
-        const SizedBox(height: 6),
+        const Text('Weekly planner', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -.6)),
+        const SizedBox(height: 4),
         Text(locked ? 'Published schedule · Visible to your team' : 'Build your team’s schedule and publish when it is ready.',
-          style: const TextStyle(fontSize: 15, color: rosterMuted)),
+          style: const TextStyle(fontSize: 14, color: rosterMuted)),
 
           ]);
           final actions = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -60,9 +60,8 @@ Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center,
             label: Text(plan.published.containsKey(dateKey(widget.week)) ? 'Republish' : 'Publish'))),
           if (!locked && slots.isEmpty) TextButton(style: _boardButton, onPressed: widget.onTemplate, child: const Text('Use standard template')),
         ]),
-          const SizedBox(height: 10),
         if (!locked && problem != null && slots.isNotEmpty)
-          Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('Before publishing: $problem',
+          Padding(padding: const EdgeInsets.only(top: 6), child: Text('Before publishing: $problem',
             style: const TextStyle(color: Color(0xFF8B5300), fontSize: 13))),
 
           ]);
@@ -77,7 +76,7 @@ Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center,
             heading, const SizedBox(height: 18), actions,
           ]);
         }),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         if (widget.error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(widget.error!, style: const TextStyle(color: Colors.red))),
         Expanded(child: LayoutBuilder(builder: (context, constraints) {
@@ -163,11 +162,11 @@ Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center,
           ])))));
   }
   Widget _summary(String value, String label, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
     decoration: BoxDecoration(color: Colors.white, border: Border.all(color: rosterLine),
       borderRadius: BorderRadius.circular(12)),
     child: Text.rich(TextSpan(children: [
-      TextSpan(text: '$value ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: color)),
+      TextSpan(text: '$value ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
       TextSpan(text: label, style: const TextStyle(fontSize: 14, color: rosterMuted)),
     ])));
   ButtonStyle get _boardButton => TextButton.styleFrom(

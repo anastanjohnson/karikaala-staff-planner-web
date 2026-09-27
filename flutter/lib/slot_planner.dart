@@ -298,7 +298,7 @@ class _SlotHomeState extends State<SlotHome> {
     return Scaffold(
       backgroundColor: (_tab == 0 && showWeekBoard) || _tab == 2 ? const Color(0xFFF5F7F5) : Colors.white,
       appBar: AppBar(
-        toolbarHeight: compactDesktop ? 64 : null,
+        toolbarHeight: compactDesktop ? 56 : null,
         title: Text(_tab == 3 ? 'Messages' : 'Staff Planner', style: compactDesktop ? const TextStyle(fontSize: 22, fontWeight: FontWeight.w700) : null),
         actions: [
           IconButton(
@@ -355,7 +355,7 @@ class _SlotHomeState extends State<SlotHome> {
                       child: Align(alignment: Alignment.centerRight, child: _viewSwitch(showWeekBoard))),
                   if (_tab == 0 || _tab == 2)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                       child: Row(
                         children: [
                           TextButton(

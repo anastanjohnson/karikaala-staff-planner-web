@@ -28,6 +28,7 @@ class StaffAvailabilityPanel extends StatefulWidget {
 class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
   late DateTime _month = DateTime(widget.today.year, widget.today.month);
   String? _staffId;
+  String _staffQuery = '';
   late DateTime? _day = restaurantClosed(widget.today) ? null : dateOnly(widget.today);
   bool _busy = false;
   String? _error;
@@ -85,7 +86,7 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
     final plan = widget.getPlan();
     final staff = plan.staff;
     final person =
-        staff.where((p) => p.id == _staffId).firstOrNull ?? staff.firstOrNull;
+        staff.where((p) => p.id == _staffId).firstOrNull;
     final id = person?.id;
 
     return ColoredBox(color: const Color(0xFFF5F7F5), child: LayoutBuilder(
@@ -164,41 +165,64 @@ class _StaffAvailabilityPanelState extends State<StaffAvailabilityPanel> {
                 style: TextStyle(fontSize: 16, color: rosterMuted)),
               const SizedBox(height: 24),
               if (person == null) _panel(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Build your team', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 12),
-                const Text('Add a staff member to start managing their availability.'),
+                const Text('Choose a staff member', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                const Text('Select a name to view their calendar and adjust availability.',
+                  style: TextStyle(fontSize: 15, color: rosterMuted)),
                 const SizedBox(height: 20),
+                TextField(
+                  key: const ValueKey('staff-search'),
+                  decoration: const InputDecoration(labelText: 'Search staff', prefixIcon: Icon(Icons.search)),
+                  onChanged: (value) => setState(() => _staffQuery = value),
+                ),
+                const SizedBox(height: 20),
+                LayoutBuilder(builder: (context, box) {
+                  final matches = staff.where((p) => p.name.toLowerCase().contains(_staffQuery.trim().toLowerCase())).toList();
+                  if (matches.isEmpty) return Text(staff.isEmpty ? 'Add your first staff member to get started.' : 'No matching staff members.');
+                  final columns = box.maxWidth >= 1000 ? 3 : box.maxWidth >= 620 ? 2 : 1;
+                  return Wrap(spacing: 16, runSpacing: 16, children: [
+                    for (final member in matches)
+                      SizedBox(width: (box.maxWidth - 16 * (columns - 1)) / columns,
+                        child: OutlinedButton(
+                          key: ValueKey('select-staff-${member.id}'),
+                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(20),
+                            backgroundColor: const Color(0xFFF2F7F3)),
+                          onPressed: () => setState(() {
+                            _staffId = member.id;
+                            _staffQuery = '';
+                            _error = null;
+                            _day = restaurantClosed(widget.today) ? null : dateOnly(widget.today);
+                            _month = DateTime(widget.today.year, widget.today.month);
+                          }),
+                          child: Row(children: [
+                            const CircleAvatar(backgroundColor: Color(0xFFE0EFE3),
+                              child: Icon(Icons.person_outline, color: Color(0xFF24573D))),
+                            const SizedBox(width: 14),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(member.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 4),
+                              const Text('View availability', style: TextStyle(fontSize: 14, color: rosterMuted)),
+                            ])),
+                            const Icon(Icons.chevron_right),
+                          ]),
+                        )),
+                  ]);
+                }),
+                const SizedBox(height: 24),
                 FilledButton.icon(key: const ValueKey('add-person'), onPressed: _addStaff,
                   icon: const Icon(Icons.person_add_alt), label: const Text('Add staff member')),
               ]))
               else ...[
                 _panel(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Expanded(
-                child: DropdownButtonFormField<String>(
-              key: const ValueKey('availability-staff'),
-              value: id,
-              isExpanded: true,
-              decoration: const InputDecoration(
-                  labelText: 'Staff member',
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
-              style: const TextStyle(
-                  fontFamily: 'Roboto',
-                  color: rosterInk,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700),
-              items: [
-                for (final member in staff)
-                  DropdownMenuItem(value: member.id, child: Text(member.name))
-              ],
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() {
-                        _staffId = value;
-                        _error = null;
-                      }),
-            )),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(person.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+              TextButton.icon(
+                key: const ValueKey('change-staff'),
+                onPressed: _busy ? null : () => setState(() { _staffId = null; _staffQuery = ''; _error = null; }),
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Change staff')),
+            ])),
             if (wide) TextButton.icon(onPressed: _busy ? null : () => widget.onEdit(person), icon: const Icon(Icons.edit_outlined), label: const Text('Edit staff'))
             else IconButton(
                 tooltip: 'Edit ${person.name}',

@@ -17,6 +17,10 @@ void main() {
       await tester.pumpWidget(MaterialApp(theme: plannerTheme(), home: Scaffold(
         body: StaffAvailabilityPanel(getPlan: () => plan, onSave: (next) async { plan = next; saves++; },
           onEdit: (_) async {}, today: DateTime(2026, 9, 25), resetToken: 0))));
+      expect(find.byKey(const ValueKey('calendar-day-2026-09-25')), findsNothing);
+      await tester.enterText(find.byKey(const ValueKey('staff-search')), 'Alex');
+      await tester.tap(find.byKey(const ValueKey('select-staff-alex')));
+      await tester.pumpAndSettle();
       final date = find.byKey(const ValueKey('calendar-day-2026-09-25'));
       await tester.ensureVisible(date);
       await tester.tap(date);
@@ -38,6 +42,12 @@ void main() {
       await tester.tap(next);
       await tester.pumpAndSettle();
       expect(find.text('October 2026'), findsOneWidget);
+      final change = find.byKey(const ValueKey('change-staff'));
+      await tester.ensureVisible(change);
+      await tester.tap(change);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('staff-search')), findsOneWidget);
+      expect(find.text('October 2026'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

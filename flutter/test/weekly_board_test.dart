@@ -10,7 +10,7 @@ void main() {
   final assigned = WorkSlot(id: 'assigned', date: week, start: 960, end: 1200, staffId: 'a');
   final plan = SlotPlan(staff: [const StaffMember(id: 'a', name: 'Alex')], slots: [open, assigned]);
 
-  testWidgets('wide board shows seven chronological days and routes actions to the existing planner', (tester) async {
+  testWidgets('wide board hides empty closed days and routes actions to the existing planner', (tester) async {
     tester.view.physicalSize = const Size(1600, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -21,9 +21,10 @@ void main() {
       plan: plan, week: week, onPick: (s) => picked = s, onAdd: (d) => added = d,
       onPublish: () {}, onRevise: () {}, onTemplate: () {}))));
     for (var i = 0; i < 7; i++) {
-      expect(find.byKey(ValueKey('board-day-${dateKey(addDays(week, i))}')), findsOneWidget);
+      expect(find.byKey(ValueKey('board-day-${dateKey(addDays(week, i))}')),
+        i == 1 || i == 2 ? findsNothing : findsOneWidget);
     }
-    expect(find.text('Closed'), findsNWidgets(2));
+    expect(find.text('Closed'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('board-slot-open')));
     expect(picked, open);
     await tester.tap(find.byKey(const ValueKey('board-add-2026-09-21')));

@@ -80,18 +80,19 @@ Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center,
         if (widget.error != null) Padding(padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(widget.error!, style: const TextStyle(color: Colors.red))),
         Expanded(child: LayoutBuilder(builder: (context, constraints) {
-          final width = math.max(1340.0, constraints.maxWidth);
-          final days = List.generate(7, (i) => addDays(widget.week, i));
-          // A closed day with existing slots must still expose those shifts.
-          final compact = days.where((d) => restaurantClosed(d) && !slots.any((s) => dateKey(s.date) == dateKey(d))).length;
-          final dayWidth = (width - 6 * 14 - compact * 160) / (7 - compact);
+          // Keep exceptional shifts visible even on normally closed days.
+          final days = List.generate(7, (i) => addDays(widget.week, i))
+              .where((d) => !restaurantClosed(d) ||
+                  slots.any((s) => dateKey(s.date) == dateKey(d))).toList();
+          final width = math.max(days.length * 220.0 + (days.length - 1) * 14, constraints.maxWidth);
+          final dayWidth = (width - (days.length - 1) * 14) / days.length;
           return Scrollbar(controller: _scroll, thumbVisibility: width > constraints.maxWidth,
             child: SingleChildScrollView(controller: _scroll, scrollDirection: Axis.horizontal,
               child: SizedBox(width: width, height: constraints.maxHeight - 12,
                 child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  for (var i = 0; i < 7; i++) ...[
+                  for (var i = 0; i < days.length; i++) ...[
                     if (i > 0) const SizedBox(width: 14),
-                    SizedBox(width: restaurantClosed(days[i]) && !slots.any((s) => dateKey(s.date) == dateKey(days[i])) ? 160 : dayWidth,
+                    SizedBox(width: dayWidth,
                       child: _day(days[i], slots, locked)),
                   ],
                 ]))));

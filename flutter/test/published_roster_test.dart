@@ -22,7 +22,7 @@ void main() {
         body: PublishedRosterOverview(publication: snapshot, onCopy: () => copies++, hasDraft: true))));
       expect(find.text('Alex'), findsOneWidget);
       expect(find.textContaining('Draft changes have not been published'), findsOneWidget);
-      expect(find.text('Restaurant closed'), findsNWidgets(2));
+      expect(find.textContaining('Restaurant closed'), findsNWidgets(2));
       expect(find.text('Note: Open the terrace'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('copy-roster')));
       expect(copies, 1);

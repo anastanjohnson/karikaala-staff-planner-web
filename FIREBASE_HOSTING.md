@@ -16,4 +16,9 @@ Alternatively, with Flutter 3.47.1 installed, run `flutter pub get`, `flutter te
 
 The GitHub Pages workflow remains available at its original URL during the transition. Do not publish the repository's legacy root HTML app as the staff portal.
 
-A custom domain such as `staff.karikaala.de` requires domain-owner DNS verification in Firebase Hosting. Use the exact DNS records Firebase supplies; do not change the restaurant's root domain records.
+## Free-only hosting
+
+The project was verified on Firebase Spark (no cost) on 29 September 2026. The user requires free services only. Keep the free `karikaala-staff-planner.web.app` address; do not upgrade billing, enable paid services, or purchase a domain. Free-plan usage limits still apply.
+
+The pending `staff.karikaala.de` custom-domain configuration was removed at the user's request. No DNS changes are needed.
+
